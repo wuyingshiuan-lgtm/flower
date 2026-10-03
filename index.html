@@ -62,6 +62,10 @@ body:before{content:"";position:fixed;z-index:-1;inset:0;pointer-events:none;bac
 .brandRibbon .ribbonWords b:nth-child(2n){-webkit-text-fill-color:#ff831b!important;color:#ff831b!important;text-shadow:0 1px #fff,0 2px #d76b10,0 0 8px #ffd066!important}
 .brandRibbon .ribbonWords b:nth-child(3n){-webkit-text-fill-color:#873fe3!important;color:#873fe3!important;text-shadow:0 1px #fff,0 2px #5924a8,0 0 8px #d8a2ff!important}
 
+/* Keep the fixed artwork inside the page stacking context and behind content. */
+html,body{background:transparent!important;isolation:isolate}
+body:before{z-index:0!important;position:fixed!important;inset:0!important;width:100vw;height:100vh;height:100dvh;background-image:url('flower-background.webp'),linear-gradient(180deg,#d4f8ff,#d9eaff 58%,#ffe7f7)!important;background-size:min(100vw,1024px) auto,100% 100%!important;background-position:center top,center top!important;background-repeat:no-repeat!important;background-attachment:fixed!important;transform:translateZ(0);will-change:transform}
+.shell{position:relative;z-index:1;background:transparent!important;isolation:isolate;overflow:visible}
 /* Responsive pearl garden dock and a viewport-fixed background */
 html{min-height:100%;scroll-padding-bottom:calc(110px + env(safe-area-inset-bottom))}
 body{min-height:100vh;min-height:100dvh;overflow-x:hidden}
