@@ -18,16 +18,26 @@ function render(){let q=document.getElementById('search').value.trim().toLowerCa
 function checks(sel=[]){document.getElementById('ownerChecks').innerHTML=owners.length?owners.map(o=>`<label class="check"><input type="checkbox" value="${esc(o)}" ${sel.includes(o)?'checked':''}>${esc(o)}</label>`).join(''):'<div style="grid-column:1/-1;color:#a77b8f">請先到「擁有人管理」新增姓名。</div>'}
 function updateImagePreview(){let p=document.getElementById('preview');p.innerHTML=tempImage?'<img src="'+tempImage+'">':'🌷 選擇手機照片';document.getElementById('cropPanel').style.display=tempImage?'block':'none';document.getElementById('batchBtn').style.display=tempImage?'block':'none'}function initCropper(data){let img=document.getElementById('cropSource');img.onload=()=>{if(cropper)cropper.destroy();cropper=new Cropper(img,{viewMode:1,dragMode:'move',autoCropArea:.78,background:false,responsive:true,restore:false,checkOrientation:true,zoomable:true,zoomOnWheel:true,aspectRatio:1,cropBoxResizable:false,ready(){let w=img.naturalWidth||img.width,h=img.naturalHeight||img.height,side=Math.min(w,h)*.78,x=Math.max(0,(w-side)/2),y=Math.max(0,Math.min(h-side,h*.25));this.setData({x,y,width:side,height:side})}});document.getElementById('cropPanel').style.display='block'};img.src=data}function rotateCrop(deg){if(cropper)cropper.rotate(deg)}function resetCrop(){if(cropper)cropper.reset()}function openFlower(i){if(typeof i==='undefined')i=-1;edit=i;var x=i>=0?flowers[i]:null;document.getElementById('formTitle').textContent=x?'🌷 修改花花':'🌸 新增花花';document.getElementById('flowerName').value=x?x.name:'';tempImage=x&&x.image?x.image:'';updateImagePreview();if(tempImage)initCropper(tempImage);checks(x&&x.owners?x.owners:[]);document.getElementById('flowerModal').scrollIntoView({behavior:'smooth',block:'start'})}
 function closeFlower(){resetForm()}function resetForm(){edit=-1;tempImage='';if(cropper){cropper.destroy();cropper=null}document.getElementById('formTitle').textContent='🌸 新增花花';document.getElementById('flowerName').value='';document.getElementById('flowerImage').value='';updateImagePreview();checks([]);document.body.style.overflow=''}
+async function ocrFlowerName(image){
+  if(!window.Tesseract)return '';
+  for(const lang of ['chi_tra','chi_sim']){
+    try{
+      let r=await Tesseract.recognize(image,lang,{langPath:'https://tessdata.projectnaptha.com/4.0.0'});
+      let n=extractFlowerName(r.data.text);
+      if(n)return n;
+    }catch(e){}
+  }
+  return '';
+}
 async function recognizeUploadedName(data){
-  let input=document.getElementById('flowerName'),old=input.value;
-  input.placeholder='正在辨識圖片上的花名…';
+  let input=document.getElementById('flowerName');
+  input.placeholder='正在辨識圖片上的花名，請稍候…';
   try{
-    if(!window.Tesseract){input.placeholder='例如：玫瑰';return}
-    let r=await Tesseract.recognize(data,'chi_tra'),name=extractFlowerName(r.data.text);
+    let name=await ocrFlowerName(data);
     if(!name){
       let im=await new Promise((resolve,reject)=>{let x=new Image();x.onload=()=>resolve(x);x.onerror=reject;x.src=data});
-      let cv=document.createElement('canvas'),cx=cv.getContext('2d');cv.width=im.height;cv.height=im.width;cx.translate(cv.width/2,cv.height/2);cx.rotate(Math.PI/2);cx.drawImage(im,-im.width/2,-im.height/2);
-      r=await Tesseract.recognize(cv,'chi_tra');name=extractFlowerName(r.data.text)
+      let cv=document.createElement('canvas'),cx=cv.getContext('2d');cv.width=im.height*2;cv.height=im.width*2;cx.translate(cv.width/2,cv.height/2);cx.rotate(Math.PI/2);cx.drawImage(im,-im.width,-im.height,im.width*2,im.height*2);
+      name=await ocrFlowerName(cv.toDataURL('image/png'));
     }
     if(name&&!input.value)input.value=name;
     input.placeholder=name?'已自動帶入花名，可直接修改':'未辨識到花名，請確認後再儲存';
